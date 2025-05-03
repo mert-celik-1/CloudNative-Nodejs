@@ -84,23 +84,28 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
           
+      - name: Copy docker-compose.yml to EC2
+        run: |
+          scp docker-compose.yml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/docker-compose.yml
+          
       - name: Deploy to EC2
         run: |
           ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "
             # Login to GitHub Container Registry
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             
-            # Pull the latest image
-            docker pull ghcr.io/${{ github.repository_owner }}/cloudnative-example:latest
-            
             # Stop and remove any existing container
             docker stop cloudnative-app || true
             docker rm cloudnative-app || true
             
-            # Run the new container - KESINLIKLE ÇALIŞTIR
-            docker run -d --name cloudnative-app -p 3000:3000 ghcr.io/${{ github.repository_owner }}/cloudnative-example:latest
+            # Update docker-compose.yml
+            sed -i 's|build:|image: ghcr.io/${{ github.repository_owner }}/cloudnative-example:latest\\n    #build:|g' docker-compose.yml
             
-            # Check if container is running
+            # Stop and start all services in the compose file
+            docker-compose down
+            docker-compose up -d
+            
+            # Check if containers are running
             docker ps
             
             # Clean up unused images
