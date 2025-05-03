@@ -16,6 +16,14 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
 
@@ -58,6 +66,8 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/cloudnative-example:latest
             ghcr.io/${{ github.repository_owner }}/cloudnative-example:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy-to-ec2:
     name: Deploy to EC2
@@ -77,25 +87,33 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-     
       - name: Create directory on EC2
         run: |
           ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "mkdir -p ~/compose-deployment"
-          
+
       - name: Copy docker-compose.yml to EC2
         run: |
           scp ./docker-compose.yml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/compose-deployment/docker-compose.yml
 
-
       - name: SSH into EC2 and Deploy
         run: |
-          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+          REPO_OWNER="${{ github.repository_owner }}"
+          GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << EOF
             cd ~/compose-deployment
+            
+            # Replace repository owner variable in docker-compose.yml
+            sed -i "s/\${GITHUB_REPOSITORY_OWNER:-username}/${REPO_OWNER}/g" docker-compose.yml
+            
             echo "Logging into GHCR"
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${REPO_OWNER}" --password-stdin
+            
             echo "Pulling latest image"
             docker-compose pull
+            
             echo "Recreating containers"
             docker-compose down && docker-compose up -d
+            
             echo "Deployment complete"
           EOF

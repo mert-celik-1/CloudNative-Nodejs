@@ -2,9 +2,8 @@ version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    container_name: cloudnative-app
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-username}/cloudnative-example:latest
     ports:
       - "3000:3000"
     depends_on:
@@ -15,6 +14,7 @@ services:
     restart: unless-stopped
 
   redis:
+    container_name: redis
     image: redis:alpine
     ports:
       - "6379:6379"
