@@ -64,3 +64,43 @@ jobs:
 
       - name: Print success message
         run: echo "Successfully built and pushed Docker image to GitHub Container Registry"
+
+  deploy-to-ec2:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
+    steps:
+      - uses: actions/checkout@v2
+        
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+          
+      - name: Add EC2 to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      
+          
+      - name: Deploy to EC2
+        run: |
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "
+            # Login to GitHub Container Registry
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            
+            # Pull the latest image
+            docker pull ghcr.io/${{ github.repository_owner }}/cloudnative-example:latest
+            
+            # Stop and remove the old container if it exists
+            docker stop cloudnative-app || true
+            docker rm cloudnative-app || true
+            
+            # Run the new container
+            docker run -d --name cloudnative-app -p 3000:3000 ghcr.io/${{ github.repository_owner }}/cloudnative-example:latest
+            
+            # Clean up unused images
+            docker image prune -f
+          "
