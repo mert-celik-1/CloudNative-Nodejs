@@ -3,15 +3,13 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 jobs:
   test:
-    name: Test
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -25,16 +23,15 @@ jobs:
         run: echo "No tests to run yet"
 
   build-and-push:
-    name: Build and Push Docker Image
+    name: Build & Push Docker Image
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     permissions:
       contents: read
       packages: write
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -46,13 +43,13 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Docker Metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: ghcr.io/${{ github.repository_owner }}/cloudnative-example
 
-      - name: Build and push
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -62,52 +59,37 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/cloudnative-example:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Print success message
-        run: echo "Successfully built and pushed Docker image to GitHub Container Registry"
-
   deploy-to-ec2:
     name: Deploy to EC2
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    
+
     steps:
-      - uses: actions/checkout@v2
-        
-      - name: Configure SSH
+      - uses: actions/checkout@v3
+
+      - name: Set up SSH Agent
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-          
+
       - name: Add EC2 to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
       - name: Copy docker-compose.yml to EC2
         run: |
-          scp docker-compose.yml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/docker-compose.yml
-          
-      - name: Deploy to EC2
+          scp ./docker-compose.yml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/compose-deployment/docker-compose.yml
+
+      - name: SSH into EC2 and Deploy
         run: |
-          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "
-            # Login to GitHub Container Registry
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ~/compose-deployment
+            echo "Logging into GHCR"
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-            
-            # Stop and remove any existing container
-            docker stop cloudnative-app || true
-            docker rm cloudnative-app || true
-            
-            # Update docker-compose.yml
-            sed -i 's|build:|image: ghcr.io/${{ github.repository_owner }}/cloudnative-example:latest\\n    #build:|g' docker-compose.yml
-            
-            # Stop and start all services in the compose file
-            docker-compose down
-            docker-compose up -d
-            
-            # Check if containers are running
-            docker ps
-            
-            # Clean up unused images
-            docker image prune -f
-          "
+            echo "Pulling latest image"
+            docker-compose pull
+            echo "Recreating containers"
+            docker-compose down && docker-compose up -d
+            echo "Deployment complete"
+          EOF
