@@ -5,6 +5,6 @@ export function createApiRouter(): Router {
     const router = Router();
 
     router.use('/users', createUserRouter());
-//aa
+
     return router;
 }
