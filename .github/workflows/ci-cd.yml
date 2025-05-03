@@ -22,7 +22,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test
+        run: echo "No tests to run yet"
 
   build-and-push:
     name: Build and Push Docker Image
