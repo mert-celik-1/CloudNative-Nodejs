@@ -16,7 +16,7 @@ app.use('/api', createApiRouter());
 
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+  res.status(200).json({ status: 'okay' });
 });
 
 const PORT = process.env.PORT || 3000;
