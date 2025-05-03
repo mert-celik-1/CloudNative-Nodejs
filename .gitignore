@@ -1,0 +1,80 @@
+# Node.js dosyaları
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+lerna-debug.log
+.npm/
+
+# Build çıktıları
+dist/
+build/
+out/
+.next/
+
+# Çalışma zamanı verileri
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Dependency dizinleri
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+
+# Yerel ortam değişkenleri
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Log dosyaları
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# macOS sistem dosyaları
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Windows sistem dosyaları
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux sistem dosyaları
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# AWS yerel config
+.aws/
+aws-config.json
+
+# DynamoDB Local
+.dynamodb/
+
+# Typescript
+*.tsbuildinfo
+
+# Jest
+jest.config.js.snap
+
+todo.txt
