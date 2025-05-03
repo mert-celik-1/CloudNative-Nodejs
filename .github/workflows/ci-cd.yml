@@ -84,9 +84,22 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
       
+      - name: Check Docker and Docker Compose on EC2
+        run: |
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "
+            echo 'Checking Docker and Docker Compose versions:'
+            docker --version
+            docker-compose --version
+            
+            echo 'Stopping existing container if running:'
+            docker stop cloudnative-app || true
+            docker rm cloudnative-app || true
+          "
+          
       - name: Copy docker-compose.yml to EC2
         run: |
           scp docker-compose.yml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/docker-compose.yml
+          echo "Successfully copied docker-compose.yml to EC2"
           
       - name: Deploy to EC2
         run: |
@@ -98,14 +111,29 @@ jobs:
             if [ ! -f .env ]; then
               echo 'PORT=3000' > .env
               echo 'REDIS_URL=redis://redis:6379' >> .env
+              echo 'Created .env file with required environment variables'
             fi
             
+            # Pull the latest image explicitly
+            docker pull ghcr.io/${{ github.repository_owner }}/cloudnative-example:latest
+            
+            echo 'Updating docker-compose.yml to use the latest image'
             # Update image in docker-compose.yml
             sed -i 's|build:|image: ghcr.io/${{ github.repository_owner }}/cloudnative-example:latest\\n    #build:|g' docker-compose.yml
             
-            # Start services with Docker Compose
+            echo 'Current docker-compose.yml content:'
+            cat docker-compose.yml
+            
+            echo 'Stopping any existing services'
+            # Stop any existing services
             docker-compose down || true
+            
+            echo 'Starting services with Docker Compose'
+            # Start services with Docker Compose
             docker-compose up -d
+            
+            echo 'Checking running containers:'
+            docker ps
             
             # Clean up unused images
             docker image prune -f
