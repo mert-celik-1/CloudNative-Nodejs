@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createUserRouter } from '../modules/user/presentation/UserRoutes';
-import { RedisService } from '../shared/infrastructure/services';
+import { RedisService } from '../infrastructure/cache/RedisService';
 
 export function createApiRouter(): Router {
     const router = Router();

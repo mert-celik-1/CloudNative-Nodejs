@@ -1,27 +1,40 @@
 import { createClient, RedisClientType } from 'redis';
-import { CacheService } from '../../../core/interfaces/CacheService';
+import { CacheService } from '../../core/interfaces/CacheService';
 
 export class RedisService implements CacheService {
   private client: RedisClientType;
   public isConnected: boolean = false;
 
   constructor(
-    private readonly redisUrl: string = process.env.REDIS_URL || 'redis://redis:6379'
+      private readonly redisUrl: string = process.env.REDIS_URL || 'redis://redis:6379'
   ) {
     this.client = createClient({ url: this.redisUrl });
-    
+
     this.client.on('error', (err) => {
       console.error('Redis Error:', err);
     });
-    
+
     this.client.on('connect', () => {
       this.isConnected = true;
       console.log('Redis connected successfully');
     });
-    
+
     this.client.on('disconnect', () => {
       this.isConnected = false;
       console.log('Redis disconnected');
+    });
+
+    // Process kapanma olaylarını RedisService içinde dinliyoruz
+    process.on('SIGINT', async () => {
+      console.log('Received SIGINT, shutting down Redis connection...');
+      await this.disconnect();
+      process.exit(0);
+    });
+
+    process.on('SIGTERM', async () => {
+      console.log('Received SIGTERM, shutting down Redis connection...');
+      await this.disconnect();
+      process.exit(0);
     });
   }
 
@@ -41,7 +54,7 @@ export class RedisService implements CacheService {
     if (!this.isConnected) {
       await this.connect();
     }
-    
+
     if (expirationInSeconds) {
       await this.client.set(key, value, { EX: expirationInSeconds });
     } else {
@@ -53,7 +66,7 @@ export class RedisService implements CacheService {
     if (!this.isConnected) {
       await this.connect();
     }
-    
+
     return await this.client.get(key);
   }
 
@@ -61,7 +74,7 @@ export class RedisService implements CacheService {
     if (!this.isConnected) {
       await this.connect();
     }
-    
+
     await this.client.del(key);
   }
 
@@ -69,7 +82,7 @@ export class RedisService implements CacheService {
     if (!this.isConnected) {
       await this.connect();
     }
-    
+
     await this.client.flushAll();
   }
-} 
+}

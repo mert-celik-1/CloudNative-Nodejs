@@ -3,7 +3,7 @@ import { UserController } from './UserController';
 import { CreateUserCommand } from '../application/commands/CreateUserCommand';
 import { GetUserByIdQuery } from '../application/queries/GetUserByIdQuery';
 import { DynamoUserRepository } from '../infrastructure/repositories/DynamoUserRepository';
-import { BcryptPasswordService } from "../../../shared/infrastructure/services/BcryptPasswordService";
+import {BcryptPasswordService} from '../../../infrastructure/crypto/BcryptPasswordService';
 
 export function createUserRouter(): Router {
     const router = Router();

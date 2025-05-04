@@ -1,6 +1,6 @@
 import {User, UserProps} from "../../domain/User";
 import { UserRepository } from "../../domain/repositories/UserRepository";
-import { PasswordService } from "../../../../shared/infrastructure/services/PasswordService";
+import { PasswordService } from "@core/interfaces/PasswordService";
 import { CreateUserDTO } from "../dtos/UserDTO";
 
 

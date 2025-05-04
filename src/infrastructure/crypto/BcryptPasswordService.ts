@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { PasswordService } from '@shared/infrastructure/services/PasswordService';
+import { PasswordService } from '@core/interfaces/PasswordService';
 
 export class BcryptPasswordService implements PasswordService {
     private readonly saltRounds = 10;
