@@ -6,7 +6,7 @@ export class RedisService implements CacheService {
   public isConnected: boolean = false;
 
   constructor(
-      private readonly redisUrl: string = process.env.REDIS_URL || 'redis://redis:6379'
+      private readonly redisUrl: string = process.env.REDIS_CONNECTION_STRING || 'redis://localhost:6379',
   ) {
     this.client = createClient({ url: this.redisUrl });
 

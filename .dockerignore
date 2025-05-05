@@ -4,4 +4,5 @@ npm-debug.log
 .github
 .vscode
 coverage
-.env
+.env.development
+.env.production
