@@ -2,7 +2,7 @@ import { UserRepository } from "../../domain/repositories/UserRepository";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ScanCommand as DocumentScanCommand } from "@aws-sdk/lib-dynamodb";
 import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { User, UserProps } from "../../domain/User";
+import { User, UserProps } from "@modules/user/domain/user";
 
 export class DynamoUserRepository implements UserRepository {
     private readonly tableName = 'Users';

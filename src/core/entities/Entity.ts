@@ -5,25 +5,26 @@ export interface EntityProps {
 }
 
 export abstract class Entity<T extends EntityProps> {
-    protected readonly id: string;
+    protected readonly props: T;
 
     constructor(props: T) {
-        this.id = props.id || randomUUID();
+        this.props = {
+            ...props,
+            id: props.id ?? randomUUID()
+        };
     }
 
-    get getId(): string {
-        return this.id;
+    get id(): string {
+        return this.props.id!;
     }
 
     public equals(entity?: Entity<T>): boolean {
-        if (entity === null || entity === undefined) {
-            return false;
-        }
+        if (!entity) return false;
+        if (this === entity) return true;
+        return this.id === entity.id;
+    }
 
-        if (this === entity) {
-            return true;
-        }
-
-        return this.id === entity.getId;
+    public toString(): string {
+        return `${this.constructor.name} [ID: ${this.id}]`;
     }
 }
