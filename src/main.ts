@@ -1,12 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import {config} from 'dotenv';
 import {createApiRouter} from './api/routes';
 import {RedisService} from './infrastructure/cache/RedisService';
 import mongoose from "mongoose";
+import * as dotenv from 'dotenv';
 
-config();
+const env = process.env.NODE_ENV || 'development';
+
+dotenv.config({ path: `.env.${env}` });
 
 const app = express();
 

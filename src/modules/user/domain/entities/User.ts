@@ -77,6 +77,26 @@ export class User extends Entity<UserProps> {
         this.props.updatedAt = new Date();
     }
 
+    public static fromPersistence(props: {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        passwordHash: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }): User {
+        return new User({
+            id: props.id,
+            email: Email.create(props.email),
+            firstName: props.firstName,
+            lastName: props.lastName,
+            passwordHash: props.passwordHash,
+            createdAt: props.createdAt,
+            updatedAt: props.updatedAt,
+        });
+    }
+
     public toDTO(): {
         id: string;
         email: string;
